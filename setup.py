@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup (name = 'AstroKML',
-       version = '1.0',
+       version = '1.0.0',
        author = 'Reid Sawtell',
        author_email='rwsawtel@mtu.edu',
        url='http://github.com/rsawtell/AstroKML',
@@ -11,7 +11,7 @@ setup (name = 'AstroKML',
        keywords=['kml','nasa','astronaut','pykml'],
        install_requires=[
             "mechanize>=2.0.1",
-            "pykml==0.3"
+            "pykml==0.0.3"
        ],
        description = 'Compile Astronaut photographs from a specified region into a single KML',
        scripts=['AstroKML.py'],
