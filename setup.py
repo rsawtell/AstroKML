@@ -40,7 +40,7 @@ Note: this is a script, not a module
 Dependencies
 ---------
 
-mechanize 2.0.1 <http://wwwsearch.sourceforge.net/mechanize>
+mechanize 0.2.5 <http://wwwsearch.sourceforge.net/mechanize>
 pykml 0.3 <http://code.google.com/p/pykml>
 
 Optional (only needed if -s option is used)
