@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup (name = 'AstroKML',
-       version = '1.0.0',
+       version = '1.0.1',
        author = 'Reid Sawtell',
        author_email='rwsawtel@mtu.edu',
        url='http://github.com/rsawtell/AstroKML',
