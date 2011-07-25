@@ -91,7 +91,8 @@ def main():
         if not len(args) == 6:
             usage()
             sys.exit(2)
-        images = getImages((args[2],args[3],args[4],args[5]),br)
+        print (args[2],args[3],args[4],args[5])
+        images = getImages(getBBoxResults((args[2],args[3],args[4],args[5]),br),br)
         writeKML(args[1],images)
 
     #the -r option uses the predefined regions available in NASA's search query form
@@ -139,12 +140,17 @@ Returns: search results response'''
     br.open("http://eol.jsc.nasa.gov/sseop/technical.htm")
 
     br.select_form(name="sqlform")
-    br["minlat"] = repr(bbox[1])
-    br["maxlat"] = repr(bbox[3])
-    br["minlon"] = repr(bbox[0])
-    br["maxlon"] = repr(bbox[2])
+    br["minlat"] = repr(float(bbox[1]))
+    br["maxlat"] = repr(float(bbox[3]))
+    br["minlon"] = repr(float(bbox[0]))
+    br["maxlon"] = repr(float(bbox[2]))
+    print br["minlon"]
+    print br["maxlon"]
+    print br["minlat"]
+    print br["maxlat"]
     br["imagesize"] = ["any"]
     response = br.submit()
+
     return response
 
 def getLocationResults(locations,br):
@@ -168,7 +174,7 @@ def getImages(response,br,shape=None):
 Returns: list of [Mission, Roll, Frame]'''
 
     doc =  response.read()
-
+    print ">",doc
     #extract the number of pages of results
     pages =  pagefinder.search(doc).group()
     pages = pages[pages.find("of")+6:]
