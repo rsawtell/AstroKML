@@ -10,7 +10,7 @@ setup (name = 'AstroKML',
        download_url='https://github.com/rsawtell/AstroKML/archives/master',
        keywords=['kml','nasa','astronaut','pykml'],
        install_requires=[
-            "mechanize>=2.0.1",
+            "mechanize>=0.2.5",
             "pykml==0.0.3"
        ],
        description = 'Compile Astronaut photographs from a specified region into a single KML',
