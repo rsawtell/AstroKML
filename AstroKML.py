@@ -393,6 +393,10 @@ def writeKML(fileName,images):
                 K.Document(
                             K.Style(
                                     K.LabelStyle(K.scale("0")),
+                                    K.IconStyle(
+                                        K.scale(1.0),
+                                        K.Icon(K.href("http://maps.google.com/mapfiles/kml/shapes/camera.png"))
+                                    ),
                                     K.BalloonStyle(
 
                                         K.text(
@@ -424,6 +428,10 @@ $[geDirections]"""
                             ),
                             K.Style(
                                     K.LabelStyle(K.scale("1.1")),
+                                    K.IconStyle(
+                                        K.scale(1.2),
+                                        K.Icon(K.href("http://maps.google.com/mapfiles/kml/shapes/camera.png"))
+                                    ),
                                     K.BalloonStyle(
 
                                         K.text(
