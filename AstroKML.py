@@ -25,7 +25,7 @@
 #gdal 1.7.1 <http://trac.osgeo.org/gdal/wiki/GdalOgrInPython>
 #shapely 1.2 <http://trac.gispython.org/lab/wiki/Shapely>
 
-import urllib2,sys,mechanize,re
+import urllib2,sys,mechanize,re,time
 from pykml.factory import KML_ElementMaker as K
 
 #used to find various parts of the webpages that are parsed
@@ -144,10 +144,6 @@ Returns: search results response'''
     br["maxlat"] = repr(float(bbox[3]))
     br["minlon"] = repr(float(bbox[0]))
     br["maxlon"] = repr(float(bbox[2]))
-    print br["minlon"]
-    print br["maxlon"]
-    print br["minlat"]
-    print br["maxlat"]
     br["imagesize"] = ["any"]
     response = br.submit()
 
@@ -174,7 +170,7 @@ def getImages(response,br,shape=None):
 Returns: list of [Mission, Roll, Frame]'''
 
     doc =  response.read()
-    print ">",doc
+
     #extract the number of pages of results
     pages =  pagefinder.search(doc).group()
     pages = pages[pages.find("of")+6:]
@@ -329,7 +325,6 @@ The use of pyKML isn't actually necessary,
 you could do just as well appending the placemarks from the NASA
 KML files into a single document, but the intention was to
 give an example usage of pyKML.'''
-
     try:
         placemark = K.Placemark(
                         K.open(0),
@@ -345,33 +340,25 @@ give an example usage of pyKML.'''
                             K.latitude(attr["Latitude"]),
                             K.range(40000)
                         ),
-                        K.Snippet("<![CDATA[<P>"+attr["MRF"]+"</P>]]>",maxLines="0"),
-                        K.description(
-        """<![CDATA[<P><IMG alt="%(MRF)s image" src="%(IMG)s" align=top></P>
-
-        <P>&nbsp;</P>
-
-        <P><STRONG><FONT size=4>Astronaut Photograph</FONT></STRONG></P>
-
-        <P><STRONG>Features</STRONG>: %(Features)s</P>
-
-        <P><STRONG>Acquired</STRONG>: %(YYYYMMDD)s (YYYYMMDD), %(HHMMSS)s (HHMMSS) GMT</P>
-
-        <P><STRONG>Camera Tilt</STRONG>: %(Camera Tilt)s&nbsp; <STRONG>Camera Lens</STRONG>: %(Camera Lens)s&nbsp; <STRONG>Camera</STRONG>: %(Camera)s</P>
-
-        <P><STRONG>Sun Azimuth</STRONG>: %(Sun Azimuth)s&nbsp; <STRONG>Sun Elevation</STRONG>: %(Sun Elevation)s&nbsp;<STRONG>Spacecraft Altitude</STRONG>: %(Spacecraft Altitude)s nautical miles</P>
-
-        <P><STRONG>Database Entry Page</STRONG>: <FONT face=Arial><A href='%(DB Entry)s'>%(DB Entry)s</A></FONT></P>
-
-        <P><STRONG><FONT color="red">Astronaut photographs are not georectified, and therefore have orientation and scale independent from Google Earth base imagery.</FONT></STRONG></P>
-
-        <P>&nbsp;</P>
-
-        <P align=center><FONT face=Arial>&nbsp;Image Science and Analysis Laboratory, NASA-Johnson Space Center. "The Gateway to Astronaut Photography of Earth." <BR><A href="http://eol.jsc.nasa.gov/"><IMG height=71 alt="Crew Earth Observations" src="http://eol.jsc.nasa.gov/images/CEO.jpg" width=82 align=left border=0></A> <A href="http://www.nasa.gov/" target=_blank><IMG height=71 alt="NASA meatball" src="http://eol.jsc.nasa.gov/images/NASA.jpg" width=82 align=right border=0></A> <!--{PS..3}--><!--{PS..4}--><!--{PS..6}--><BR>Send questions or comments to the NASA Responsible Official at <A href="mailto:jsc-earthweb@mail.nasa.gov">jsc-earthweb@mail.nasa.gov</A><BR>Curator: <A onclick="window.open('/credits.htm', 'win1', config='height=598, width=500')" href="http://eol.jsc.nasa.gov/#" alt="Web Team">Earth Sciences Web Team</A><BR>Notices: <A href="http://www.jsc.nasa.gov/policies.html" target=_blank>Web Accessibility and Policy Notices, NASA Web Privacy Policy</A><BR><!--{PS..5}--></FONT></P>]]>""" %attr
+                        K.TimeStamp(K.when(time.strftime("%Y-%m-%dT%H:%M:%SZ",time.strptime(attr["YYYYMMDD"]+attr["HHMMSS"],"%Y%m%d %H%M%S")))),
+                        K.ExtendedData(
+                            K.Data( K.value(attr["MRF"]), name="MRF"),
+                            K.Data( K.value(attr["IMG"]), name="IMG"),
+                            K.Data( K.value(attr["Features"]), name="features"),
+                            K.Data( K.value(attr["YYYYMMDD"]), name="YYYYMMDD"),
+                            K.Data( K.value(attr["HHMMSS"]), name="HHMMSS"),
+                            K.Data( K.value(attr["Camera Tilt"]), name="Camera_Tilt"),
+                            K.Data( K.value(attr["Camera Lens"]), name="Camera_Lens"),
+                            K.Data( K.value(attr["Camera"]), name="Camera"),
+                            K.Data( K.value(attr["Sun Azimuth"]), name="Sun_Azimuth"),
+                            K.Data( K.value(attr["Sun Elevation"]), name="Sun_Elevation"),
+                            K.Data( K.value(attr["Spacecraft Altitude"]), name="Spacecraft_Altitude"),
+                            K.Data( K.value(attr["DB Entry"]), name="DB_Entry"),
                         )
+
                         
                     )
-    except:
+    except :
         return None
     return placemark
 
@@ -395,6 +382,7 @@ def writeKML(fileName,images):
             print "Error Parsing URL<%(Page)s>: http://eol.jsc.nasa.gov/scripts/sseop/PhotoKML.pl?photo=%(Mission)s-%(Roll)s-%(Frame)s"%image
         else:
             placemarks += [placeMaker(attr)]
+
         ct += 1
         if ct%10 == 0:
             sys.stdout.write(".")
@@ -405,10 +393,64 @@ def writeKML(fileName,images):
                 K.Document(
                             K.Style(
                                     K.LabelStyle(K.scale("0")),
+                                    K.BalloonStyle(
+
+                                        K.text(
+"""<![CDATA[<P><STRONG><FONT size=4>$[MRF]</FONT</STRONG></P><P><IMG alt="$[MRF] image" src="$[IMG]" align=top></P>
+
+<P>&nbsp;</P>
+
+<P><STRONG><FONT size=4>Astronaut Photograph</FONT></STRONG></P>
+
+<P><STRONG>Features</STRONG>: $[features]</P>
+
+<P><STRONG>Acquired</STRONG>: $[YYYYMMDD] (YYYYMMDD), $[HHMMSS] (HHMMSS) GMT</P>
+
+<P><STRONG>Camera Tilt</STRONG>: $[Camera_Tilt]&nbsp; <STRONG>Camera Lens</STRONG>: $[Camera_Lens]&nbsp; <STRONG>Camera</STRONG>: $[Camera]</P>
+
+<P><STRONG>Sun Azimuth</STRONG>: $[Sun_Azimuth]&nbsp; <STRONG>Sun Elevation</STRONG>: $[Sun_Elevation]&nbsp;<STRONG>Spacecraft Altitude</STRONG>: $[Spacecraft_Altitude] nautical miles</P>
+
+<P><STRONG>Database Entry Page</STRONG>: <FONT face=Arial><A href='$[DB_Entry]'>$[DB_Entry]</A></FONT></P>
+
+<P><STRONG><FONT color="red">Astronaut photographs are not georectified, and therefore have orientation and scale independent from Google Earth base imagery.</FONT></STRONG></P>
+
+<P>&nbsp;</P>
+
+<P align=center><FONT face=Arial>&nbsp;Image Science and Analysis Laboratory, NASA-Johnson Space Center. "The Gateway to Astronaut Photography of Earth." <BR><A href="http://eol.jsc.nasa.gov/"><IMG height=71 alt="Crew Earth Observations" src="http://eol.jsc.nasa.gov/images/CEO.jpg" width=82 align=left border=0></A> <A href="http://www.nasa.gov/" target=_blank><IMG height=71 alt="NASA meatball" src="http://eol.jsc.nasa.gov/images/NASA.jpg" width=82 align=right border=0></A> <!--{PS..3}--><!--{PS..4}--><!--{PS..6}--><BR>Send questions or comments to the NASA Responsible Official at <A href="mailto:jsc-earthweb@mail.nasa.gov">jsc-earthweb@mail.nasa.gov</A><BR>Curator: <A onclick="window.open('/credits.htm', 'win1', config='height=598, width=500')" href="http://eol.jsc.nasa.gov/#" alt="Web Team">Earth Sciences Web Team</A><BR>Notices: <A href="http://www.jsc.nasa.gov/policies.html" target=_blank>Web Accessibility and Policy Notices, NASA Web Privacy Policy</A><BR><!--{PS..5}--></FONT></P>
+$[geDirections]"""
+                                                )
+                                    ),
                                     id="sn_style"
                             ),
                             K.Style(
                                     K.LabelStyle(K.scale("1.1")),
+                                    K.BalloonStyle(
+
+                                        K.text(
+"""<![CDATA[<P><STRONG><FONT size=4>$[MRF]</FONT</STRONG></P><P><IMG alt="$[MRF] image" src="$[IMG]" align=top></P>
+
+<P>&nbsp;</P>
+
+<P><STRONG><FONT size=4>Astronaut Photograph</FONT></STRONG></P>
+
+<P><STRONG>Features</STRONG>: $[features]</P>
+
+<P><STRONG>Acquired</STRONG>: $[YYYYMMDD] (YYYYMMDD), $[HHMMSS] (HHMMSS) GMT</P>
+
+<P><STRONG>Camera Tilt</STRONG>: $[Camera_Tilt]&nbsp; <STRONG>Camera Lens</STRONG>: $[Camera_Lens]&nbsp; <STRONG>Camera</STRONG>: $[Camera]</P>
+
+<P><STRONG>Sun Azimuth</STRONG>: $[Sun_Azimuth]&nbsp; <STRONG>Sun Elevation</STRONG>: $[Sun_Elevation]&nbsp;<STRONG>Spacecraft Altitude</STRONG>: $[Spacecraft_Altitude] nautical miles</P>
+
+<P><STRONG>Database Entry Page</STRONG>: <FONT face=Arial><A href='$[DB_Entry]'>$[DB_Entry]</A></FONT></P>
+
+<P><STRONG><FONT color="red">Astronaut photographs are not georectified, and therefore have orientation and scale independent from Google Earth base imagery.</FONT></STRONG></P>
+
+<P>&nbsp;</P>
+
+<P align=center><FONT face=Arial>&nbsp;Image Science and Analysis Laboratory, NASA-Johnson Space Center. "The Gateway to Astronaut Photography of Earth." <BR><A href="http://eol.jsc.nasa.gov/"><IMG height=71 alt="Crew Earth Observations" src="http://eol.jsc.nasa.gov/images/CEO.jpg" width=82 align=left border=0></A> <A href="http://www.nasa.gov/" target=_blank><IMG height=71 alt="NASA meatball" src="http://eol.jsc.nasa.gov/images/NASA.jpg" width=82 align=right border=0></A> <!--{PS..3}--><!--{PS..4}--><!--{PS..6}--><BR>Send questions or comments to the NASA Responsible Official at <A href="mailto:jsc-earthweb@mail.nasa.gov">jsc-earthweb@mail.nasa.gov</A><BR>Curator: <A onclick="window.open('/credits.htm', 'win1', config='height=598, width=500')" href="http://eol.jsc.nasa.gov/#" alt="Web Team">Earth Sciences Web Team</A><BR>Notices: <A href="http://www.jsc.nasa.gov/policies.html" target=_blank>Web Accessibility and Policy Notices, NASA Web Privacy Policy</A><BR><!--{PS..5}--></FONT></P>
+$[geDirections]"""
+                                                )
+                                    ),
                                     id="sh_style"
                             ),
                             K.StyleMap(
@@ -417,7 +459,7 @@ def writeKML(fileName,images):
                                         K.styleUrl("#sn_style")
                                     ),
                                     K.Pair(
-                                        K.key("normal"),
+                                        K.key("highlight"),
                                         K.styleUrl("#sh_style")
                                     ),
                                     id="sm_style"
@@ -433,4 +475,3 @@ def writeKML(fileName,images):
 
 if __name__=="__main__":
     main()
-    
